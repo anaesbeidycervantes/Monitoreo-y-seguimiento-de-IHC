@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Values Table</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        #canvas {
+            border: 1px solid black;
+            width: 1100px;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Values Table</h1>
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th scope="col">X</th>
+                    <th scope="col">Y</th>
+                    <th scope="col">Z</th>
+                </tr>
+            </thead>
+            <tbody id="values-table">
+                <!-- Inicialmente vacío -->
+            </tbody>
+        </table>
+        <canvas id="canvas" width="400" height="400"></canvas>
+    </div>
+
+    <script>
+        function mapValue(value, inputMin, inputMax, outputMin, outputMax) {
+            return ((value - inputMin) * (outputMax - outputMin) / (inputMax - inputMin)) + outputMin;
+        }
+
+        function fetchData() {
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('values-table');
+                    tableBody.innerHTML = ''; // Limpiar la tabla
+
+                    if (data.length > 0) {
+                        const entry = data[data.length - 1]; // Obtener el último registro
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${entry.x.toFixed(1)}</td><td>${entry.y.toFixed(1)}</td><td>${entry.z.toFixed(1)}</td>`;
+                        tableBody.appendChild(row);
+
+                        // Actualizar el canvas
+                        const canvas = document.getElementById('canvas');
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+
+                        // Map values to canvas size
+                        const mappedX = mapValue(entry.x, -10, 10, 0, canvas.width - 100); // Ajustar valores para el límite del canvas
+                        const mappedY = mapValue(entry.y, -10, 10, 0, canvas.height - 100);
+                        const mappedZ = mapValue(entry.z, -10, 10, 10, 100); // Ajustar tamaño mínimo y máximo
+
+                        // Dibujar la imagen en el canvas (aumenta el tamaño de la imagen)
+                        const img = new Image();
+                        img.src = 'avion.png';
+                        img.onload = function() {
+                            ctx.drawImage(img, mappedX, mappedY, mappedZ, mappedZ);
+                        };
+                    }
+                });
+        }
+
+        setInterval(fetchData, 10); // Llamar a fetchData cada 50ms
+    </script>
+</body>
+</html>
